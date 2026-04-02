@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clip Tool</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- PASSWORD GATE -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-title">ENTER PASSWORD</div>
+    <input type="password" id="gate-input" class="gate-inp" placeholder="Password..." onkeydown="if(event.key==='Enter')checkPass()">
+    <button class="btn-3d" onclick="checkPass()">ENTER</button>
+    <div class="gate-err" id="gate-err"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="toolbar-tabs">
+      <button class="tab-btn active" id="tab-library" onclick="switchTab('library')">LIBRARY</button>
+      <button class="tab-btn" id="tab-editor" onclick="switchTab('editor')">EDITOR</button>
+      <button class="tab-btn" id="tab-youtube" onclick="switchTab('youtube')">YT DOWNLOAD</button>
+    </div>
+    <div class="toolbar-right">
+      <span class="sel-counter" id="sel-counter" style="display:none"></span>
+      <button class="btn-3d" id="make-btn" onclick="switchTab('editor')" disabled>&#9654; MAKE CLIP</button>
+    </div>
+  </div>
+
+  <!-- LIBRARY TAB -->
+  <div class="tab-content active" id="tab-content-library">
+    <div class="lib-bar">
+      <button class="btn-3d-sm" onclick="showNewFolder()">+ NEW FOLDER</button>
+      <button class="btn-3d-sm primary" onclick="triggerUpload()">&#8593; UPLOAD VIDEO</button>
+      <input type="file" id="upload-input" multiple accept="video/*" style="display:none" onchange="handleUpload(event)">
+      <button class="btn-3d-sm" id="clr-btn" onclick="clearSel()" style="display:none">&#215; CLEAR SEL</button>
+    </div>
+    <div class="lib-body">
+      <div class="sidebar">
+        <div class="sidebar-header">FOLDERS</div>
+        <div id="folder-list"></div>
+        <div style="padding:8px 4px;margin-top:4px;border-top:1px solid #4a3a1a">
+          <button class="btn-3d-sm" style="width:100%;font-size:10px" onclick="showNewFolder()">+ NEW</button>
+        </div>
+      </div>
+      <div class="grid-area">
+        <div class="grid-toolbar">
+          <span class="section-label" id="folder-heading">ALL VIDEOS</span>
+          <span class="sel-info" id="sel-info"></span>
+        </div>
+        <div class="drop-zone" id="drop-zone" onclick="triggerUpload()" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
+          DROP VIDEO FILES HERE OR CLICK TO UPLOAD
+        </div>
+        <div class="video-grid" id="video-grid"></div>
+        <div class="empty-msg" id="empty-msg" style="display:none">NO VIDEOS IN THIS FOLDER</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDITOR TAB -->
+  <div class="tab-content" id="tab-content-editor">
+    <div class="editor-layout">
+      <div class="editor-main">
+        <div class="preview-panel">
+          <div class="panel-header">PREVIEW</div>
+          <div class="preview-area">
+            <div class="crt-screen" id="crt-screen">
+              <div class="crt-inner" id="crt-inner">
+                <div class="crt-idle" id="crt-idle">[ SELECT CLIPS &amp; GENERATE ]</div>
+                <div class="crt-playing" id="crt-playing" style="display:none">
+                  <div class="crt-emoji" id="crt-emoji">&#127916;</div>
+                  <div class="crt-clipname" id="crt-clipname"></div>
+                  <div class="crt-bar">
+                    <div class="crt-bar-fill" id="crt-bar-fill"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="transport">
+            <button class="btn-transport" id="play-btn" onclick="togglePlay()">&#9654;</button>
+            <button class="btn-transport" onclick="stopPlay()">&#9632;</button>
+            <span class="timecode" id="timecode">00:00 / 00:00</span>
+            <div class="scrub-bar" id="scrub-bar" onclick="seekTo(event)">
+              <div class="scrub-fill" id="scrub-fill"></div>
+              <div class="scrub-head" id="scrub-head"></div>
+            </div>
+            <button class="btn-3d-sm" onclick="doExport()">EXPORT</button>
+          </div>
+        </div>
+
+        <div class="timeline-panel">
+          <div class="panel-header">
+            TIMELINE
+            <button class="btn-3d-sm" onclick="autoLayout()" style="margin-left:auto;font-size:9px">AUTO</button>
+          </div>
+          <div class="timeline-scroll">
+            <div id="timeline"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-panel">
+        <div class="settings-section">
+          <div class="section-label">CLIPS</div>
+          <div id="ed-clip-list"></div>
+          <div class="hint" id="no-clips-hint">Go to Library tab and select 1-5 clips</div>
+        </div>
+
+        <div class="settings-section">
+          <div class="section-label">DURATION</div>
+          <div class="field-row">
+            <span class="field-lbl">LENGTH</span>
+            <span class="field-val" id="dur-display">0:30</span>
+          </div>
+          <input type="range" class="slider" min="5" max="600" step="5" value="30" id="dur-slider" oninput="onDurChange(this.value)">
+          <div class="dur-marks">
+            <span>5s</span><span>1m</span><span>5m</span><span>10m</span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="section-label">AUDIO</div>
+          <div id="audio-ui">
+            <div class="upload-audio-btn" onclick="triggerAudioUpload()">+ UPLOAD AUDIO FILE</div>
+            <input type="file" id="audio-input" accept="audio/*" style="display:none" onchange="onAudioFile(event)">
+          </div>
+          <div id="audio-trim-ui" style="display:none">
+            <div class="field-row" style="margin-top:8px">
+              <span class="field-lbl">START AT</span>
+              <span class="field-val" id="astart-display">0:00</span>
+            </div>
+            <input type="range" class="slider" min="0" max="300" step="1" value="0" id="astart-slider" oninput="onAudioStart(this.value)">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="section-label">GENERATE</div>
+          <div class="gen-status" id="gen-status"></div>
+          <button class="btn-3d generate-btn" id="gen-btn" onclick="generateClip()">&#9654;&#9654; GENERATE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- YOUTUBE TAB -->
+  <div class="tab-content" id="tab-content-youtube">
+    <div class="yt-layout">
+      <div class="yt-panel">
+        <div class="panel-header">YOUTUBE DOWNLOADER</div>
+        <div class="yt-body">
+          <div class="section-label">PASTE YOUTUBE URL</div>
+          <div class="yt-input-row">
+            <input type="text" class="yt-url-input" id="yt-url" placeholder="https://www.youtube.com/watch?v=..." onkeydown="if(event.key==='Enter')fetchYtInfo()">
+            <button class="btn-3d-sm primary" onclick="fetchYtInfo()">FETCH</button>
+          </div>
+
+          <div class="yt-info-box" id="yt-info" style="display:none">
+            <div class="yt-thumb-row">
+              <img id="yt-thumb" src="" alt="thumbnail" class="yt-thumb">
+              <div class="yt-meta">
+                <div class="yt-title" id="yt-title"></div>
+                <div class="yt-duration" id="yt-duration"></div>
+                <div class="yt-channel" id="yt-channel"></div>
+              </div>
+            </div>
+
+            <div class="section-label" style="margin-top:14px">FORMAT</div>
+            <div class="format-grid" id="format-grid"></div>
+
+            <div class="section-label" style="margin-top:14px">DOWNLOAD AS</div>
+            <div class="dl-type-row">
+              <label class="radio-label">
+                <input type="radio" name="dl-type" value="mp4" checked> MP4 (VIDEO)
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="dl-type" value="mp3"> MP3 (AUDIO ONLY)
+              </label>
+            </div>
+
+            <button class="btn-3d generate-btn" id="dl-btn" onclick="startDownload()" style="margin-top:14px">&#9660; DOWNLOAD</button>
+          </div>
+
+          <div class="yt-status" id="yt-status"></div>
+          <div class="yt-progress-wrap" id="yt-progress-wrap" style="display:none">
+            <div class="progress-bar-outer">
+              <div class="progress-bar-inner" id="yt-progress-bar"></div>
+            </div>
+            <span class="progress-label" id="yt-progress-label">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="yt-history-panel">
+        <div class="panel-header">DOWNLOAD HISTORY</div>
+        <div class="yt-history" id="yt-history">
+          <div class="hint">No downloads yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOLDER MODAL -->
+<div class="modal-overlay" id="modal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">NEW FOLDER</div>
+    <input type="text" class="modal-input" id="modal-inp" placeholder="Folder name..." onkeydown="if(event.key==='Enter')modalConfirm()">
+    <div class="modal-btns">
+      <button class="btn-3d-sm" onclick="hideModal()">CANCEL</button>
+      <button class="btn-3d-sm primary" onclick="modalConfirm()">CREATE</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
